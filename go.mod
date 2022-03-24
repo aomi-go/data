@@ -1,3 +1,3 @@
-module github.com/aomi-go/data/common
+module github.com/aomi-go/data-common
 
 go 1.18
