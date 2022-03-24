@@ -8,4 +8,5 @@ type Page[T interface{}] struct {
 	Last          bool `json:"last,omitempty"`
 	TotalPages    uint `json:"totalPages,omitempty"`
 	TotalElements uint `json:"totalElements,omitempty"`
+	Value         any  `json:"value,omitempty"`
 }
