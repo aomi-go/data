@@ -1,13 +1,11 @@
 package repository
 
-type CrudRepository[T interface{}, ID interface{}] interface {
-	Save(entity *T)
+type CrudRepository interface {
+	Save(entity interface{}) interface{}
 
-	FindById(id ID) *T
+	FindById(id interface{}) interface{}
 
-	ExistsById(id ID) bool
+	ExistsById(id interface{}) bool
 
-	Count() uint
-
-	DeleteById(id ID)
+	DeleteById(id interface{}) bool
 }
