@@ -6,5 +6,5 @@ const (
 )
 
 type Sort struct {
-	Sort string `json:"sort" describe:"排序"`
+	Sort string `form:"sort" json:"sort" describe:"排序"`
 }

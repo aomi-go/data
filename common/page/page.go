@@ -15,8 +15,8 @@ func NewDefaultPageable() *Pageable {
 // Pageable 分页请求
 type Pageable struct {
 	sort.Sort
-	Page int `json:"page" describe:"页码从0开始"`
-	Size int `json:"size" describe:"每页的大小"`
+	Page int `form:"page" json:"page" describe:"页码从0开始"`
+	Size int `form:"size" json:"size" describe:"每页的大小"`
 }
 
 func NewPage[T interface{}](content []T, total int64, pageable *Pageable) *Page[T] {
