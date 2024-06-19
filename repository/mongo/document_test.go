@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	cmongo "github.com/aomi-go/data/common/entity/mongo"
+	"github.com/aomi-go/data/common/page"
+	"github.com/aomi-go/data/common/sort"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"testing"
@@ -37,4 +39,28 @@ func TestSave(t *testing.T) {
 	newUsers, err := repository.SaveMany(context.TODO(), users)
 
 	fmt.Println(newUsers)
+}
+
+func TestQueryPage(t *testing.T) {
+	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI("mongodb://admin:admin@127.0.0.1:27017/?authSource=admin"))
+	if nil != err {
+		return
+	}
+
+	repository := NewDocumentRepositoryWithEntity[User](client.Database("crypto"), User{})
+
+	var filter map[string]interface{}
+	page, err := repository.QueryWithPage(context.TODO(), filter, page.NewPageableWithSort(0, 2, sort.NewSortBy(sort.DESC, "_id")))
+	if nil != err {
+		return
+	}
+
+	fmt.Println(page)
+
+	users, err := repository.QueryWithSort(context.TODO(), filter, nil)
+	if nil != err {
+		return
+	}
+
+	fmt.Println(users)
 }

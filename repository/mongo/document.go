@@ -4,6 +4,8 @@ import (
 	"context"
 	ce "github.com/aomi-go/data/common/entity"
 	cmongo "github.com/aomi-go/data/common/entity/mongo"
+	"github.com/aomi-go/data/common/page"
+	"github.com/aomi-go/data/common/sort"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"reflect"
@@ -115,6 +117,40 @@ func (d *DocumentRepository[Entity]) Exist(ctx context.Context, filter interface
 	} else {
 		return false, err
 	}
+}
+
+// QueryWithPage 分页查询
+func (d *DocumentRepository[Entity]) QueryWithPage(ctx context.Context, filter interface{}, pageable *page.Pageable) (*page.Page[Entity], error) {
+	if nil == pageable {
+		pageable = page.NewDefaultPageable()
+	}
+	total, err := d.Count(ctx, filter)
+	if nil != err {
+		return nil, err
+	}
+
+	if total == 0 {
+		return page.NewPage[Entity](nil, 0, pageable), nil
+	}
+
+	pageOpts := options.Find().SetSkip(pageable.GetOffset()).SetLimit(int64(pageable.Size))
+	sortOpts := GetSortOpts(pageable.Sort)
+
+	entities, err := d.Find(ctx, filter, pageOpts, sortOpts)
+	if nil != err {
+		return nil, err
+	}
+
+	return page.NewPage[Entity](entities, total, pageable), nil
+}
+
+// QueryWithSort 排序查询
+func (d *DocumentRepository[Entity]) QueryWithSort(ctx context.Context, filter interface{}, sort *sort.Sort) ([]*Entity, error) {
+	var opts *options.FindOptions
+	if nil != sort {
+		opts = GetSortOpts(*sort)
+	}
+	return d.Find(ctx, filter, opts)
 }
 
 func (d *DocumentRepository[Entity]) convertEntitiesToInterface(entities []*Entity) []interface{} {

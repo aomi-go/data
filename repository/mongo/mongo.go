@@ -2,11 +2,13 @@ package mongo
 
 import (
 	"context"
+	"github.com/aomi-go/data/common/page"
+	"github.com/aomi-go/data/common/sort"
 	"github.com/aomi-go/data/repository"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type MongoRepository[Entity interface{}] interface {
+type Repository[Entity interface{}] interface {
 	repository.CrudRepository[Entity]
 	SaveMany(ctx context.Context, entities []*Entity) ([]*Entity, error)
 	// Find 根据条件查询数据
@@ -22,4 +24,10 @@ type MongoRepository[Entity interface{}] interface {
 
 	// Exist 存在
 	Exist(ctx context.Context, filter interface{}, opts ...*options.CountOptions) (bool, error)
+
+	// QueryWithPage 分页查询
+	QueryWithPage(ctx context.Context, filter interface{}, pageable *page.Pageable) (*page.Page[Entity], error)
+
+	// QueryWithSort 排序查询
+	QueryWithSort(ctx context.Context, filter interface{}, sort *sort.Sort) ([]*Entity, error)
 }

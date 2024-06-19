@@ -5,11 +5,23 @@ import (
 	"math"
 )
 
-func NewDefaultPageable() *Pageable {
+func NewPageable(page int, size int) *Pageable {
 	return &Pageable{
-		Page: 0,
-		Size: 20,
+		Page: page,
+		Size: size,
 	}
+}
+
+func NewPageableWithSort(page int, size int, s sort.Sort) *Pageable {
+	return &Pageable{
+		Page: page,
+		Size: size,
+		Sort: s,
+	}
+}
+
+func NewDefaultPageable() *Pageable {
+	return NewPageable(0, 20)
 }
 
 // Pageable 分页请求
@@ -19,7 +31,11 @@ type Pageable struct {
 	Size int `form:"size" json:"size" describe:"每页的大小"`
 }
 
-func NewPage[T interface{}](content []T, total int64, pageable *Pageable) *Page[T] {
+func (p *Pageable) GetOffset() int64 {
+	return int64(p.Page * p.Size)
+}
+
+func NewPage[T interface{}](content []*T, total int64, pageable *Pageable) *Page[T] {
 	if nil == pageable {
 		pageable = NewDefaultPageable()
 	}
@@ -50,7 +66,7 @@ type Page[T interface{}] struct {
 	Size             int   `json:"size"`
 	TotalElements    int64 `json:"totalElements"`
 	TotalPages       int   `json:"totalPages"`
-	Content          []T   `json:"content"`
+	Content          []*T  `json:"content"`
 }
 
 func calculateTotalPages(total int64, size int) int {
