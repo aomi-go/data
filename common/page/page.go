@@ -69,6 +69,26 @@ type Page[T interface{}] struct {
 	Content          []*T  `json:"content"`
 }
 
+func PageMap[T interface{}, N interface{}](old *Page[T], mapfunc func(t *T) *N) *Page[N] {
+	var newPage Page[N] = Page[N]{
+		Empty:            old.Empty,
+		First:            old.First,
+		Last:             old.Last,
+		Number:           old.Number,
+		NumberOfElements: old.NumberOfElements,
+		Size:             old.Size,
+		TotalElements:    old.TotalElements,
+		TotalPages:       old.TotalPages,
+	}
+
+	var content = make([]*N, len(old.Content))
+	for i, v := range old.Content {
+		content[i] = mapfunc(v)
+	}
+
+	return &newPage
+}
+
 func calculateTotalPages(total int64, size int) int {
 	if size <= 0 {
 		return 0
