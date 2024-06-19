@@ -69,8 +69,9 @@ type Page[T interface{}] struct {
 	Content          []*T  `json:"content"`
 }
 
+// PageMap 转换page类型
 func PageMap[T interface{}, N interface{}](old *Page[T], mapfunc func(t *T) *N) *Page[N] {
-	var newPage Page[N] = Page[N]{
+	var newPage = Page[N]{
 		Empty:            old.Empty,
 		First:            old.First,
 		Last:             old.Last,
@@ -85,6 +86,7 @@ func PageMap[T interface{}, N interface{}](old *Page[T], mapfunc func(t *T) *N) 
 	for i, v := range old.Content {
 		content[i] = mapfunc(v)
 	}
+	newPage.Content = content
 
 	return &newPage
 }
