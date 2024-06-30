@@ -17,6 +17,14 @@ func (a *AbstractEntity) GetStrId() string {
 	return a.Id.Hex()
 }
 
+func (a *AbstractEntity) IdIsNil() bool {
+	if nil == a.Id {
+		return true
+	}
+
+	return a.Id.IsZero()
+}
+
 func (a *AbstractEntity) SetId(id interface{}) {
 	switch i := id.(type) {
 	case primitive.ObjectID:

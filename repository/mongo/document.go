@@ -6,6 +6,7 @@ import (
 	cmongo "github.com/aomi-go/data/common/entity/mongo"
 	"github.com/aomi-go/data/common/page"
 	"github.com/aomi-go/data/common/sort"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -39,12 +40,19 @@ type DocumentRepository[Entity ce.Entity] struct {
 }
 
 func (d *DocumentRepository[Entity]) Save(ctx context.Context, entity *Entity) (*Entity, error) {
-	result, err := d.collection.InsertOne(ctx, entity)
-	if nil != err {
-		return entity, err
-	}
 	initializeEntity(entity)
-	(*entity).SetId(result.InsertedID)
+	filter := bson.M{"_id": d.GetId((*entity).GetId())}
+	opts := options.Replace().SetUpsert(true) // This option will create a new document if no document matches the filter
+
+	result, err := d.collection.ReplaceOne(ctx, filter, entity, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if result.UpsertedID != nil {
+		(*entity).SetId(result.UpsertedID)
+	}
+
 	return entity, nil
 }
 
@@ -66,14 +74,35 @@ func (d *DocumentRepository[Entity]) DeleteById(ctx context.Context, id interfac
 }
 
 func (d *DocumentRepository[Entity]) SaveMany(ctx context.Context, entities []*Entity) ([]*Entity, error) {
-	result, err := d.collection.InsertMany(ctx, d.convertEntitiesToInterface(entities))
-	if nil == err {
-		for i, item := range entities {
-			initializeEntity(item)
-			(*item).SetId(result.InsertedIDs[i])
+	var models []mongo.WriteModel
+
+	for _, entity := range entities {
+		initializeEntity(entity)
+
+		// 如果实体的 ID 为空，则表示这是一个新实体，需要插入
+		if (*entity).IdIsNil() {
+			(*entity).SetId(primitive.NewObjectID())
+			model := mongo.NewInsertOneModel().SetDocument(entity)
+			models = append(models, model)
+		} else {
+			// 如果实体的 ID 不为空，则表示这是一个现有实体，需要更新
+			filter := bson.M{"_id": d.GetId((*entity).GetId())}
+			model := mongo.NewReplaceOneModel().
+				SetFilter(filter).
+				SetReplacement(entity).
+				SetUpsert(true)
+			models = append(models, model)
 		}
 	}
-	return entities, err
+
+	// 执行批量写操作
+	opts := options.BulkWrite().SetOrdered(false)
+	_, err := d.collection.BulkWrite(ctx, models, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	return entities, nil
 }
 
 func (d *DocumentRepository[Entity]) Find(ctx context.Context, filter interface{}, opts ...*options.FindOptions) ([]*Entity, error) {
