@@ -6,6 +6,7 @@ import (
 	cmongo "github.com/aomi-go/data/common/entity/mongo"
 	"github.com/aomi-go/data/common/page"
 	"github.com/aomi-go/data/common/sort"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"reflect"
@@ -23,16 +24,18 @@ func NewDocumentRepositoryWithEntity[E ce.Entity](db *mongo.Database, emptyEntit
 // NewDocumentRepository creates a new DocumentRepository.
 func NewDocumentRepository[E ce.Entity](db *mongo.Database, collectionName string, collectionOpts ...*options.CollectionOptions) *DocumentRepository[E] {
 	return &DocumentRepository[E]{
-		db:             db,
-		collection:     db.Collection(collectionName, collectionOpts...),
-		collectionName: collectionName,
+		db:                     db,
+		collection:             db.Collection(collectionName, collectionOpts...),
+		collectionName:         collectionName,
+		AutoConvertId2ObjectId: true,
 	}
 }
 
 type DocumentRepository[Entity ce.Entity] struct {
-	db             *mongo.Database
-	collection     *mongo.Collection
-	collectionName string
+	db                     *mongo.Database
+	collection             *mongo.Collection
+	collectionName         string
+	AutoConvertId2ObjectId bool
 }
 
 func (d *DocumentRepository[Entity]) Save(ctx context.Context, entity *Entity) (*Entity, error) {
@@ -47,15 +50,15 @@ func (d *DocumentRepository[Entity]) Save(ctx context.Context, entity *Entity) (
 
 func (d *DocumentRepository[Entity]) FindById(ctx context.Context, id interface{}) (*Entity, error) {
 	var result Entity
-	err := d.collection.FindOne(ctx, map[string]interface{}{"_id": id}).Decode(&result)
+	err := d.collection.FindOne(ctx, map[string]interface{}{"_id": d.GetId(id)}).Decode(&result)
 	return &result, err
 }
 
 func (d *DocumentRepository[Entity]) ExistsById(ctx context.Context, id interface{}) (bool, error) {
-	return d.Exist(ctx, map[string]interface{}{"_id": id})
+	return d.Exist(ctx, map[string]interface{}{"_id": d.GetId(id)})
 }
 func (d *DocumentRepository[Entity]) DeleteById(ctx context.Context, id interface{}) (bool, error) {
-	r, err := d.collection.DeleteOne(ctx, map[string]interface{}{"_id": id})
+	r, err := d.collection.DeleteOne(ctx, map[string]interface{}{"_id": d.GetId(id)})
 	if nil == err {
 		return r.DeletedCount > 0, nil
 	}
@@ -159,6 +162,18 @@ func (d *DocumentRepository[Entity]) convertEntitiesToInterface(entities []*Enti
 		result[i] = e
 	}
 	return result
+}
+
+func (d *DocumentRepository[Entity]) GetId(id interface{}) interface{} {
+	if !d.AutoConvertId2ObjectId {
+		return id
+	}
+	if idStr, ok := id.(string); ok {
+		if oid, err := primitive.ObjectIDFromHex(idStr); nil == err {
+			return oid
+		}
+	}
+	return id
 }
 
 // InitializeEntity initializes the embedded AbstractEntity pointer
