@@ -10,6 +10,13 @@ func (a *AbstractEntity) GetId() interface{} {
 	return a.Id
 }
 
+func (a *AbstractEntity) GetStrId() string {
+	if nil == a.Id {
+		return ""
+	}
+	return a.Id.Hex()
+}
+
 func (a *AbstractEntity) SetId(id interface{}) {
 	switch i := id.(type) {
 	case primitive.ObjectID:
