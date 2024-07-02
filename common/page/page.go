@@ -35,6 +35,11 @@ func (p *Pageable) GetOffset() int64 {
 	return int64(p.Page * p.Size)
 }
 
+func EmptyPage[T interface{}]() *Page[T] {
+	var content []*T
+	return NewPage[T](content, 0, nil)
+}
+
 func NewPage[T interface{}](content []*T, total int64, pageable *Pageable) *Page[T] {
 	if nil == pageable {
 		pageable = NewDefaultPageable()
