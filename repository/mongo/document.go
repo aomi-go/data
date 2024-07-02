@@ -41,6 +41,9 @@ type DocumentRepository[Entity ce.Entity] struct {
 
 func (d *DocumentRepository[Entity]) Save(ctx context.Context, entity *Entity) (*Entity, error) {
 	initializeEntity(entity)
+	if (*entity).IdIsNil() {
+		(*entity).SetId(primitive.NewObjectID())
+	}
 	filter := bson.M{"_id": d.GetId((*entity).GetId())}
 	opts := options.Replace().SetUpsert(true) // This option will create a new document if no document matches the filter
 
