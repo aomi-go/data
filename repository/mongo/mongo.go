@@ -25,6 +25,8 @@ type Repository[Entity interface{}] interface {
 	// Exist 存在
 	Exist(ctx context.Context, filter interface{}, opts ...*options.CountOptions) (bool, error)
 
+	Delete(ctx context.Context, filter interface{}, opts ...*options.DeleteOptions) (int64, error)
+
 	// QueryWithPage 分页查询
 	QueryWithPage(ctx context.Context, filter interface{}, pageable *page.Pageable) (*page.Page[Entity], error)
 

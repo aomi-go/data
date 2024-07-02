@@ -154,6 +154,14 @@ func (d *DocumentRepository[Entity]) Exist(ctx context.Context, filter interface
 	}
 }
 
+func (d *DocumentRepository[Entity]) Delete(ctx context.Context, filter interface{}, opts ...*options.DeleteOptions) (int64, error) {
+	r, e := d.collection.DeleteMany(ctx, filter, opts...)
+	if nil != e {
+		return 0, e
+	}
+	return r.DeletedCount, nil
+}
+
 // QueryWithPage 分页查询
 func (d *DocumentRepository[Entity]) QueryWithPage(ctx context.Context, filter interface{}, pageable *page.Pageable) (*page.Page[Entity], error) {
 	if nil == pageable {
