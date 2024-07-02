@@ -67,10 +67,11 @@ type Page[T interface{}] struct {
 	TotalElements    int64 `json:"totalElements"`
 	TotalPages       int   `json:"totalPages"`
 	Content          []*T  `json:"content"`
+	Extra            any   `json:"extra" describe:"额外信息"`
 }
 
-// PageMap 转换page类型
-func PageMap[T interface{}, N interface{}](old *Page[T], mapfunc func(t *T) *N) *Page[N] {
+// Map 转换page类型
+func Map[T interface{}, N interface{}](old *Page[T], mapfunc func(t *T) *N) *Page[N] {
 	var newPage = Page[N]{
 		Empty:            old.Empty,
 		First:            old.First,
