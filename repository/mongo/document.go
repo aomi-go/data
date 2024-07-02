@@ -214,13 +214,21 @@ func initializeEntity(entity any) {
 
 	for i := 0; i < entityValue.NumField(); i++ {
 		field := entityValue.Field(i)
-		if field.Kind() == reflect.Ptr && field.IsNil() {
-			fieldType := field.Type()
-			if fieldType.Elem() == reflect.TypeOf(cmongo.AbstractEntity{}) {
+		fieldType := field.Type()
+		if fieldType.Elem() == reflect.TypeOf(cmongo.AbstractEntity{}) {
+			if field.IsNil() {
 				field.Set(reflect.New(fieldType.Elem()))
-				return
 			}
+
+			return
 		}
+		//if field.Kind() == reflect.Ptr && field.IsNil() {
+		//	fieldType := field.Type()
+		//	if fieldType.Elem() == reflect.TypeOf(cmongo.AbstractEntity{}) {
+		//		field.Set(reflect.New(fieldType.Elem()))
+		//		return
+		//	}
+		//}
 	}
 
 }
