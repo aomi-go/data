@@ -11,6 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"reflect"
+	"regexp"
 	"strings"
 )
 
@@ -18,7 +19,7 @@ import (
 func NewDocumentRepositoryWithEntity[E ce.Entity](db *mongo.Database, emptyEntity any, collectionOpts ...*options.CollectionOptions) *DocumentRepository[E] {
 	entityType := reflect.TypeOf(emptyEntity)
 	structName := entityType.Name()
-	collectionName := toCamelCase(structName)
+	collectionName := toSnakeCase(structName)
 	return NewDocumentRepository[E](db, collectionName, collectionOpts...)
 }
 
@@ -241,20 +242,12 @@ func initializeEntity(entity any) {
 
 }
 
-func toCamelCase(name string) string {
-	// 分割字符串
-	parts := strings.FieldsFunc(name, func(r rune) bool {
-		return r == '_' || r == '-' || r == ' '
-	})
+// toSnakeCase converts a CamelCase string to snake_case.
+func toSnakeCase(str string) string {
+	var matchFirstCap = regexp.MustCompile("(.)([A-Z][a-z]+)")
+	var matchAllCap = regexp.MustCompile("([a-z0-9])([A-Z])")
 
-	// 首字母小写
-	for i, part := range parts {
-		if i == 0 {
-			parts[i] = strings.ToLower(part)
-		} else {
-			parts[i] = strings.ToTitle(part)
-		}
-	}
-
-	return strings.Join(parts, "")
+	snake := matchFirstCap.ReplaceAllString(str, "${1}_${2}")
+	snake = matchAllCap.ReplaceAllString(snake, "${1}_${2}")
+	return strings.ToLower(snake)
 }
