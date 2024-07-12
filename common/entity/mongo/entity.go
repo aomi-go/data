@@ -3,7 +3,7 @@ package mongo
 import "go.mongodb.org/mongo-driver/bson/primitive"
 
 type AbstractEntity struct {
-	Id *primitive.ObjectID `bson:"_id,omitempty"`
+	Id *primitive.ObjectID `bson:"_id,omitempty" json:"id" yaml:"id"`
 }
 
 func (a *AbstractEntity) GetId() interface{} {
