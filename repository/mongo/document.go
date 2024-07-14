@@ -115,7 +115,7 @@ func (d *DocumentRepository[Entity]) Find(ctx context.Context, filter interface{
 		return nil, err
 	}
 
-	var result []*Entity
+	var result = make([]*Entity, 0)
 
 	for cursor.Next(ctx) {
 		var item Entity
