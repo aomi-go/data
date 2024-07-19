@@ -60,9 +60,20 @@ func (d *DocumentRepository[Entity]) Save(ctx context.Context, entity *Entity) (
 	return entity, nil
 }
 
+func (d *DocumentRepository[Entity]) FindAll(ctx context.Context) ([]*Entity, error) {
+	vs, err := d.Find(ctx, bson.M{})
+	if err := toErr(err); nil != err {
+		return nil, err
+	}
+	return vs, nil
+}
+
 func (d *DocumentRepository[Entity]) FindById(ctx context.Context, id interface{}) (*Entity, error) {
 	var result Entity
 	err := d.collection.FindOne(ctx, map[string]interface{}{"_id": d.GetId(id)}).Decode(&result)
+	if err := toErr(err); nil != err {
+		return nil, err
+	}
 	return &result, err
 }
 
@@ -111,7 +122,7 @@ func (d *DocumentRepository[Entity]) SaveMany(ctx context.Context, entities []*E
 
 func (d *DocumentRepository[Entity]) Find(ctx context.Context, filter interface{}, opts ...*options.FindOptions) ([]*Entity, error) {
 	cursor, err := d.collection.Find(ctx, filter, opts...)
-	if nil != err {
+	if err := toErr(err); nil != err {
 		return nil, err
 	}
 
@@ -134,12 +145,18 @@ func (d *DocumentRepository[Entity]) Find(ctx context.Context, filter interface{
 func (d *DocumentRepository[Entity]) FindOne(ctx context.Context, filter interface{}, opts ...*options.FindOneOptions) (*Entity, error) {
 	var result Entity
 	err := d.collection.FindOne(ctx, filter, opts...).Decode(&result)
+	if err := toErr(err); nil != err {
+		return nil, err
+	}
 	return &result, err
 }
 
 func (d *DocumentRepository[Entity]) FindOneAndModify(ctx context.Context, filter interface{}, update interface{}, opts ...*options.FindOneAndUpdateOptions) (*Entity, error) {
 	var result Entity
 	err := d.collection.FindOneAndUpdate(ctx, filter, update, opts...).Decode(&result)
+	if err := toErr(err); nil != err {
+		return nil, err
+	}
 	return &result, err
 }
 
