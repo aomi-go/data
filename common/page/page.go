@@ -86,6 +86,7 @@ func Map[T interface{}, N interface{}](old *Page[T], mapfunc func(t *T) *N) *Pag
 		Size:             old.Size,
 		TotalElements:    old.TotalElements,
 		TotalPages:       old.TotalPages,
+		Extra:            old.Extra,
 	}
 
 	var content = make([]*N, len(old.Content))
