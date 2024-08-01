@@ -11,6 +11,7 @@ const (
 	Radio Type = "radio"
 	// Checkbox 多选
 	Checkbox Type = "checkbox"
+	JSON     Type = "json"
 )
 
 // Field 表单字段
