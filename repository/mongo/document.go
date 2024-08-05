@@ -214,6 +214,22 @@ func (d *DocumentRepository[Entity]) QueryWithSort(ctx context.Context, filter i
 	return d.Find(ctx, filter, opts)
 }
 
+func (d *DocumentRepository[Entity]) UpdateOne(ctx context.Context, filter interface{}, update interface{}, opts ...*options.UpdateOptions) (int64, error) {
+	r, err := d.collection.UpdateMany(ctx, filter, update, opts...)
+	if nil != err {
+		return 0, err
+	}
+	return r.ModifiedCount, nil
+}
+func (d *DocumentRepository[Entity]) UpdateMany(ctx context.Context, filter interface{}, update interface{},
+	opts ...*options.UpdateOptions) (int64, error) {
+	r, err := d.collection.UpdateMany(ctx, filter, update, opts...)
+	if nil != err {
+		return 0, err
+	}
+	return r.ModifiedCount, nil
+}
+
 func (d *DocumentRepository[Entity]) convertEntitiesToInterface(entities []*Entity) []interface{} {
 	result := make([]interface{}, len(entities))
 	for i, e := range entities {
