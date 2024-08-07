@@ -257,6 +257,10 @@ func (d *DocumentRepository[Entity]) GetId(id interface{}) interface{} {
 	return id
 }
 
+func (d *DocumentRepository[Entity]) GetCollection() *mongo.Collection {
+	return d.collection
+}
+
 // InitializeEntity initializes the embedded AbstractEntity pointer
 func initializeEntity(entity any) {
 	entityValue := reflect.ValueOf(entity).Elem()
