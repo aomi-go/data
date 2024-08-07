@@ -213,6 +213,13 @@ func (d *DocumentRepository[Entity]) QueryWithSort(ctx context.Context, filter i
 	}
 	return d.Find(ctx, filter, opts)
 }
+func (d *DocumentRepository[Entity]) FindWithCursor(ctx context.Context, filter interface{}, opts ...*options.FindOptions) (*mongo.Cursor, error) {
+	cursor, err := d.collection.Find(ctx, filter, opts...)
+	if err := toErr(err); nil != err {
+		return nil, err
+	}
+	return cursor, nil
+}
 
 func (d *DocumentRepository[Entity]) UpdateOne(ctx context.Context, filter interface{}, update interface{}, opts ...*options.UpdateOptions) (int64, error) {
 	r, err := d.collection.UpdateMany(ctx, filter, update, opts...)
