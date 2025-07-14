@@ -12,7 +12,7 @@ type QueryBuilder struct {
 func NewQueryBuilder() *QueryBuilder {
 	return &QueryBuilder{filter: bson.M{}}
 }
-func Of(filter bson.M) *QueryBuilder {
+func QueryBuilderOf(filter bson.M) *QueryBuilder {
 	return &QueryBuilder{filter: filter}
 }
 
@@ -79,6 +79,21 @@ func (b *QueryBuilder) Between(field string, min interface{}, max interface{}) *
 // Exists 构建存在查询条件
 func (b *QueryBuilder) Exists(field string, exists bool) *QueryBuilder {
 	b.filter[field] = bson.M{"$exists": exists}
+	return b
+}
+
+func (b *QueryBuilder) In(field string, values ...interface{}) *QueryBuilder {
+	b.filter[field] = bson.M{"$in": values}
+	return b
+}
+
+func (b *QueryBuilder) NotIn(field string, values ...interface{}) *QueryBuilder {
+	b.filter[field] = bson.M{"$nin": values}
+	return b
+}
+
+func (b *QueryBuilder) Where(field string, value interface{}) *QueryBuilder {
+	b.filter[field] = bson.M{field: value}
 	return b
 }
 
