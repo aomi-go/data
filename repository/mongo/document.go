@@ -47,7 +47,7 @@ func (d *DocumentRepository[Entity]) Save(ctx context.Context, entity *Entity) (
 		id, idOk = d.ToObjectIdWithCheck(idFieldValue.Interface())
 	}
 
-	if idFieldOk && idOk {
+	if idOk && !id.IsZero() {
 		filter := bson.M{"_id": id}
 		opts := options.Replace().SetUpsert(true) // This option will create a new document if no document matches the filter
 
