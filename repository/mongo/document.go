@@ -298,6 +298,8 @@ func (d *DocumentRepository[Entity]) ToObjectIdWithCheck(id interface{}) (primit
 		if oid, err := primitive.ObjectIDFromHex(v); nil == err {
 			return oid, true
 		}
+	case BaseObjectId:
+		return v.ObjectId(), true
 	default:
 		// 使用反射处理包装类型
 		val := reflect.ValueOf(id)

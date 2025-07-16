@@ -5,8 +5,13 @@ import (
 	"github.com/aomi-go/data/common/page"
 	"github.com/aomi-go/data/common/sort"
 	"github.com/aomi-go/data/repository"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
+
+type BaseObjectId interface {
+	ObjectId() primitive.ObjectID
+}
 
 type Repository[Entity interface{}] interface {
 	repository.CrudRepository[Entity]
