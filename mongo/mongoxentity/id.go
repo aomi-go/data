@@ -2,6 +2,27 @@ package mongoxentity
 
 import "go.mongodb.org/mongo-driver/bson/primitive"
 
+func NewStrObjectId() StrObjectId {
+	return StrObjectIdFromObjectId(primitive.NewObjectID())
+}
+
+func StrObjectIdFromAny(id interface{}) StrObjectId {
+	if id == nil {
+		return ""
+	}
+
+	switch v := id.(type) {
+	case StrObjectId:
+		return v
+	case primitive.ObjectID:
+		return StrObjectIdFromObjectId(v)
+	case string:
+		return StrObjectIdFromStringZero(v)
+	default:
+		return ""
+	}
+}
+
 func StrObjectIdFromStringZero(id string) StrObjectId {
 	primitiveId, err := primitive.ObjectIDFromHex(id)
 	if err != nil {

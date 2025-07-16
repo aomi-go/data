@@ -2,8 +2,6 @@ package mongo
 
 import (
 	"context"
-	ce "github.com/aomi-go/data/common/entity"
-	cmongo "github.com/aomi-go/data/common/entity/mongo"
 	"github.com/aomi-go/data/common/page"
 	"github.com/aomi-go/data/common/sort"
 	"go.mongodb.org/mongo-driver/bson"
@@ -16,7 +14,7 @@ import (
 )
 
 // NewDocumentRepositoryWithEntity creates a new DocumentRepository.
-func NewDocumentRepositoryWithEntity[E ce.Entity](db *mongo.Database, emptyEntity any, collectionOpts ...*options.CollectionOptions) *DocumentRepository[E] {
+func NewDocumentRepositoryWithEntity[E interface{}](db *mongo.Database, emptyEntity any, collectionOpts ...*options.CollectionOptions) *DocumentRepository[E] {
 	entityType := reflect.TypeOf(emptyEntity)
 	structName := entityType.Name()
 	collectionName := toSnakeCase(structName)
@@ -24,40 +22,47 @@ func NewDocumentRepositoryWithEntity[E ce.Entity](db *mongo.Database, emptyEntit
 }
 
 // NewDocumentRepository creates a new DocumentRepository.
-func NewDocumentRepository[E ce.Entity](db *mongo.Database, collectionName string, collectionOpts ...*options.CollectionOptions) *DocumentRepository[E] {
+func NewDocumentRepository[E interface{}](db *mongo.Database, collectionName string, collectionOpts ...*options.CollectionOptions) *DocumentRepository[E] {
 	return &DocumentRepository[E]{
-		db:                     db,
-		collection:             db.Collection(collectionName, collectionOpts...),
-		collectionName:         collectionName,
-		AutoConvertId2ObjectId: true,
+		db:             db,
+		collection:     db.Collection(collectionName, collectionOpts...),
+		collectionName: collectionName,
+		IDFieldName:    "ID",
 	}
 }
 
-type DocumentRepository[Entity ce.Entity] struct {
-	db                     *mongo.Database
-	collection             *mongo.Collection
-	collectionName         string
-	AutoConvertId2ObjectId bool
+type DocumentRepository[Entity interface{}] struct {
+	db             *mongo.Database
+	collection     *mongo.Collection
+	collectionName string
+	IDFieldName    string
 }
 
 func (d *DocumentRepository[Entity]) Save(ctx context.Context, entity *Entity) (*Entity, error) {
-	initializeEntity(entity)
-	if (*entity).IdIsNil() {
-		(*entity).SetId(primitive.NewObjectID())
-	}
-	filter := bson.M{"_id": d.GetId((*entity).GetId())}
-	opts := options.Replace().SetUpsert(true) // This option will create a new document if no document matches the filter
 
-	result, err := d.collection.ReplaceOne(ctx, filter, entity, opts)
-	if err != nil {
-		return nil, err
+	idFieldValue, idFieldOk := d.getIdFieldValue(entity)
+	idOk := false
+	var id primitive.ObjectID
+	if idFieldOk {
+		id, idOk = d.toObjectIdWithCheck(idFieldValue.Interface())
 	}
 
-	if result.UpsertedID != nil {
-		(*entity).SetId(result.UpsertedID)
-	}
+	if idFieldOk && idOk {
+		filter := bson.M{"_id": id}
+		opts := options.Replace().SetUpsert(true) // This option will create a new document if no document matches the filter
 
-	return entity, nil
+		_, err := d.collection.ReplaceOne(ctx, filter, entity, opts)
+		if err != nil {
+			return nil, err
+		}
+		return entity, nil
+	} else {
+		r, err := d.collection.InsertOne(ctx, entity)
+		if nil == err && idFieldOk {
+			d.setIdFieldValue(idFieldValue, r.InsertedID.(primitive.ObjectID))
+		}
+		return entity, err
+	}
 }
 
 func (d *DocumentRepository[Entity]) FindAll(ctx context.Context) ([]*Entity, error) {
@@ -70,7 +75,7 @@ func (d *DocumentRepository[Entity]) FindAll(ctx context.Context) ([]*Entity, er
 
 func (d *DocumentRepository[Entity]) FindById(ctx context.Context, id interface{}) (*Entity, error) {
 	var result Entity
-	err := d.collection.FindOne(ctx, map[string]interface{}{"_id": d.GetId(id)}).Decode(&result)
+	err := d.collection.FindOne(ctx, map[string]interface{}{"_id": d.toObjectId(id)}).Decode(&result)
 	if err := toErr(err); nil != err {
 		return nil, err
 	}
@@ -78,10 +83,10 @@ func (d *DocumentRepository[Entity]) FindById(ctx context.Context, id interface{
 }
 
 func (d *DocumentRepository[Entity]) ExistsById(ctx context.Context, id interface{}) (bool, error) {
-	return d.Exist(ctx, map[string]interface{}{"_id": d.GetId(id)})
+	return d.Exist(ctx, map[string]interface{}{"_id": d.toObjectId(id)})
 }
 func (d *DocumentRepository[Entity]) DeleteById(ctx context.Context, id interface{}) (bool, error) {
-	r, err := d.collection.DeleteOne(ctx, map[string]interface{}{"_id": d.GetId(id)})
+	r, err := d.collection.DeleteOne(ctx, map[string]interface{}{"_id": d.toObjectId(id)})
 	if nil == err {
 		return r.DeletedCount > 0, nil
 	}
@@ -92,20 +97,27 @@ func (d *DocumentRepository[Entity]) SaveMany(ctx context.Context, entities []*E
 	var models []mongo.WriteModel
 
 	for _, entity := range entities {
-		initializeEntity(entity)
+		idFieldValue, idFieldOk := d.getIdFieldValue(entity)
+		idOk := false
+		var id primitive.ObjectID
+		if idFieldOk {
+			id, idOk = d.toObjectIdWithCheck(idFieldValue.Interface())
+		}
 
-		// 如果实体的 ID 为空，则表示这是一个新实体，需要插入
-		if (*entity).IdIsNil() {
-			(*entity).SetId(primitive.NewObjectID())
-			model := mongo.NewInsertOneModel().SetDocument(entity)
-			models = append(models, model)
-		} else {
+		if idOk {
 			// 如果实体的 ID 不为空，则表示这是一个现有实体，需要更新
-			filter := bson.M{"_id": d.GetId((*entity).GetId())}
+			filter := bson.M{"_id": id}
 			model := mongo.NewReplaceOneModel().
 				SetFilter(filter).
 				SetReplacement(entity).
 				SetUpsert(true)
+			models = append(models, model)
+		} else {
+			// 如果实体的 ID 为空，则表示这是一个新实体，需要插入
+			if idFieldOk {
+				d.setIdFieldValue(idFieldValue, primitive.NewObjectID())
+			}
+			model := mongo.NewInsertOneModel().SetDocument(entity)
 			models = append(models, model)
 		}
 	}
@@ -245,45 +257,66 @@ func (d *DocumentRepository[Entity]) convertEntitiesToInterface(entities []*Enti
 	return result
 }
 
-func (d *DocumentRepository[Entity]) GetId(id interface{}) interface{} {
-	if !d.AutoConvertId2ObjectId {
-		return id
+func (d *DocumentRepository[Entity]) getIdFieldValue(doc *Entity) (reflect.Value, bool) {
+	v := reflect.ValueOf(doc)
+	if v.Kind() != reflect.Ptr || v.IsNil() {
+		return reflect.Value{}, false
 	}
-	if idStr, ok := id.(string); ok {
-		if oid, err := primitive.ObjectIDFromHex(idStr); nil == err {
-			return oid
+	elem := v.Elem()
+	if elem.Kind() != reflect.Struct {
+		return reflect.Value{}, false
+	}
+
+	// 查找 ID 字段
+	idField := elem.FieldByName("ID")
+	//if !idField.IsValid() || idField.Type() != reflect.TypeOf(primitive.ObjectID{}) {
+	if !idField.IsValid() {
+		return reflect.Value{}, false
+	}
+	return idField, true
+}
+
+func (d *DocumentRepository[Entity]) setIdFieldValue(idField reflect.Value, id primitive.ObjectID) {
+	if idField.Type() == reflect.TypeOf(primitive.ObjectID{}) {
+		idField.Set(reflect.ValueOf(id))
+	} else if idField.Kind() == reflect.String {
+		if idField.Type().ConvertibleTo(reflect.TypeOf("")) {
+			converted := reflect.ValueOf(id.Hex()).Convert(idField.Type())
+			idField.Set(converted)
 		}
 	}
-	return id
+}
+
+func (d *DocumentRepository[Entity]) toObjectIdWithCheck(id interface{}) (primitive.ObjectID, bool) {
+	if nil == id {
+		return primitive.NilObjectID, false
+	}
+	switch v := id.(type) {
+	case primitive.ObjectID:
+		return v, true
+	case string:
+		if oid, err := primitive.ObjectIDFromHex(v); nil == err {
+			return oid, true
+		}
+	default:
+		// 使用反射处理包装类型
+		val := reflect.ValueOf(id)
+		if val.Kind() == reflect.String {
+			strVal := val.Convert(reflect.TypeOf("")).Interface().(string)
+			if oid, err := primitive.ObjectIDFromHex(strVal); err == nil {
+				return oid, true
+			}
+		}
+	}
+	return primitive.NilObjectID, false
+}
+func (d *DocumentRepository[Entity]) toObjectId(id interface{}) primitive.ObjectID {
+	v, _ := d.toObjectIdWithCheck(id)
+	return v
 }
 
 func (d *DocumentRepository[Entity]) GetCollection() *mongo.Collection {
 	return d.collection
-}
-
-// InitializeEntity initializes the embedded AbstractEntity pointer
-func initializeEntity(entity any) {
-	entityValue := reflect.ValueOf(entity).Elem()
-
-	for i := 0; i < entityValue.NumField(); i++ {
-		field := entityValue.Field(i)
-		fieldType := field.Type()
-		if fieldType.Elem() == reflect.TypeOf(cmongo.AbstractEntity{}) {
-			if field.IsNil() {
-				field.Set(reflect.New(fieldType.Elem()))
-			}
-
-			return
-		}
-		//if field.Kind() == reflect.Ptr && field.IsNil() {
-		//	fieldType := field.Type()
-		//	if fieldType.Elem() == reflect.TypeOf(cmongo.AbstractEntity{}) {
-		//		field.Set(reflect.New(fieldType.Elem()))
-		//		return
-		//	}
-		//}
-	}
-
 }
 
 // toSnakeCase converts a CamelCase string to snake_case.
