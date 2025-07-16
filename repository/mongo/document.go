@@ -44,7 +44,7 @@ func (d *DocumentRepository[Entity]) Save(ctx context.Context, entity *Entity) (
 	idOk := false
 	var id primitive.ObjectID
 	if idFieldOk {
-		id, idOk = d.toObjectIdWithCheck(idFieldValue.Interface())
+		id, idOk = d.ToObjectIdWithCheck(idFieldValue.Interface())
 	}
 
 	if idFieldOk && idOk {
@@ -75,7 +75,7 @@ func (d *DocumentRepository[Entity]) FindAll(ctx context.Context) ([]*Entity, er
 
 func (d *DocumentRepository[Entity]) FindById(ctx context.Context, id interface{}) (*Entity, error) {
 	var result Entity
-	err := d.collection.FindOne(ctx, map[string]interface{}{"_id": d.toObjectId(id)}).Decode(&result)
+	err := d.collection.FindOne(ctx, map[string]interface{}{"_id": d.ToObjectId(id)}).Decode(&result)
 	if err := toErr(err); nil != err {
 		return nil, err
 	}
@@ -83,10 +83,10 @@ func (d *DocumentRepository[Entity]) FindById(ctx context.Context, id interface{
 }
 
 func (d *DocumentRepository[Entity]) ExistsById(ctx context.Context, id interface{}) (bool, error) {
-	return d.Exist(ctx, map[string]interface{}{"_id": d.toObjectId(id)})
+	return d.Exist(ctx, map[string]interface{}{"_id": d.ToObjectId(id)})
 }
 func (d *DocumentRepository[Entity]) DeleteById(ctx context.Context, id interface{}) (bool, error) {
-	r, err := d.collection.DeleteOne(ctx, map[string]interface{}{"_id": d.toObjectId(id)})
+	r, err := d.collection.DeleteOne(ctx, map[string]interface{}{"_id": d.ToObjectId(id)})
 	if nil == err {
 		return r.DeletedCount > 0, nil
 	}
@@ -101,7 +101,7 @@ func (d *DocumentRepository[Entity]) SaveMany(ctx context.Context, entities []*E
 		idOk := false
 		var id primitive.ObjectID
 		if idFieldOk {
-			id, idOk = d.toObjectIdWithCheck(idFieldValue.Interface())
+			id, idOk = d.ToObjectIdWithCheck(idFieldValue.Interface())
 		}
 
 		if idOk {
@@ -287,7 +287,7 @@ func (d *DocumentRepository[Entity]) setIdFieldValue(idField reflect.Value, id p
 	}
 }
 
-func (d *DocumentRepository[Entity]) toObjectIdWithCheck(id interface{}) (primitive.ObjectID, bool) {
+func (d *DocumentRepository[Entity]) ToObjectIdWithCheck(id interface{}) (primitive.ObjectID, bool) {
 	if nil == id {
 		return primitive.NilObjectID, false
 	}
@@ -310,8 +310,8 @@ func (d *DocumentRepository[Entity]) toObjectIdWithCheck(id interface{}) (primit
 	}
 	return primitive.NilObjectID, false
 }
-func (d *DocumentRepository[Entity]) toObjectId(id interface{}) primitive.ObjectID {
-	v, _ := d.toObjectIdWithCheck(id)
+func (d *DocumentRepository[Entity]) ToObjectId(id interface{}) primitive.ObjectID {
+	v, _ := d.ToObjectIdWithCheck(id)
 	return v
 }
 
