@@ -1,4 +1,4 @@
-module github.com/aomi-go/data/mongox
+module github.com/aomi-go/data/mongo
 
 go 1.22.2
 
