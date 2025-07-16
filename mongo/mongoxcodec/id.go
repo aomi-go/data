@@ -36,10 +36,10 @@ type StrObjectIdDecoder struct {
 }
 
 func (d *StrObjectIdDecoder) DecodeValue(context bsoncodec.DecodeContext, reader bsonrw.ValueReader, val reflect.Value) error {
-	if !val.CanSet() || val.Kind() != reflect.Struct || val.Type() != reflect.TypeOf(mongoxentity.StrObjectId("")) {
+	if !val.CanSet() || val.Kind() != reflect.String {
 		return bsoncodec.ValueDecoderError{
 			Name:     "StrObjectIdDecoder",
-			Kinds:    []reflect.Kind{reflect.Struct},
+			Kinds:    []reflect.Kind{reflect.String},
 			Received: val,
 		}
 	}
