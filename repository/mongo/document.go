@@ -322,7 +322,7 @@ func (d *DocumentRepository[Entity]) GetCollection() *mongo.Collection {
 
 func getCollectionName(emptyEntity any) string {
 	if v, ok := emptyEntity.(mongoxentity.EntityDocument); ok {
-		return v.GetCollection()
+		return v.CollectionName()
 	}
 
 	entityType := reflect.TypeOf(emptyEntity)
