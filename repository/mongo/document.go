@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/aomi-go/data/common/page"
 	"github.com/aomi-go/data/common/sort"
+	"github.com/aomi-go/data/mongo/mongoxentity"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -15,9 +16,7 @@ import (
 
 // NewDocumentRepositoryWithEntity creates a new DocumentRepository.
 func NewDocumentRepositoryWithEntity[E interface{}](db *mongo.Database, emptyEntity any, collectionOpts ...*options.CollectionOptions) *DocumentRepository[E] {
-	entityType := reflect.TypeOf(emptyEntity)
-	structName := entityType.Name()
-	collectionName := toSnakeCase(structName)
+	collectionName := getCollectionName(emptyEntity)
 	return NewDocumentRepository[E](db, collectionName, collectionOpts...)
 }
 
@@ -319,6 +318,16 @@ func (d *DocumentRepository[Entity]) ToObjectId(id interface{}) primitive.Object
 
 func (d *DocumentRepository[Entity]) GetCollection() *mongo.Collection {
 	return d.collection
+}
+
+func getCollectionName(emptyEntity any) string {
+	if v, ok := emptyEntity.(mongoxentity.EntityDocument); ok {
+		return v.GetCollection()
+	}
+
+	entityType := reflect.TypeOf(emptyEntity)
+	structName := entityType.Name()
+	return toSnakeCase(structName)
 }
 
 // toSnakeCase converts a CamelCase string to snake_case.
