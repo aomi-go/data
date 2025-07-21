@@ -71,6 +71,25 @@ func (d *DocumentRepository[Entity]) FindAll(ctx context.Context) ([]*Entity, er
 	}
 	return vs, nil
 }
+func (d *DocumentRepository[Entity]) FindAllById(ctx context.Context, ids ...interface{}) ([]*Entity, error) {
+	if len(ids) == 0 {
+		return []*Entity{}, nil
+	}
+
+	var objectIds []primitive.ObjectID
+	for _, id := range ids {
+		if oid, ok := d.ToObjectIdWithCheck(id); ok && !oid.IsZero() {
+			objectIds = append(objectIds, oid)
+		}
+	}
+
+	if len(objectIds) == 0 {
+		return []*Entity{}, nil
+	}
+
+	filter := bson.M{"_id": bson.M{"$in": objectIds}}
+	return d.Find(ctx, filter)
+}
 
 func (d *DocumentRepository[Entity]) FindById(ctx context.Context, id interface{}) (*Entity, error) {
 	var result Entity
