@@ -15,8 +15,8 @@ import (
 )
 
 // NewDocumentRepositoryWithEntity creates a new DocumentRepository.
-func NewDocumentRepositoryWithEntity[E interface{}](db *mongo.Database, emptyEntity any, collectionOpts ...*options.CollectionOptions) *DocumentRepository[E] {
-	collectionName := getCollectionName(emptyEntity)
+func NewDocumentRepositoryWithEntity[E interface{}](db *mongo.Database, emptyEntity E, collectionOpts ...*options.CollectionOptions) *DocumentRepository[E] {
+	collectionName := getCollectionName(&emptyEntity)
 	return NewDocumentRepository[E](db, collectionName, collectionOpts...)
 }
 
