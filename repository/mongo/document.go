@@ -16,7 +16,7 @@ import (
 
 // NewDocumentRepositoryWithEntity creates a new DocumentRepository.
 func NewDocumentRepositoryWithEntity[E interface{}](db *mongo.Database, emptyEntity E, collectionOpts ...*options.CollectionOptions) *DocumentRepository[E] {
-	collectionName := getCollectionName(&emptyEntity)
+	collectionName := GetCollectionName(&emptyEntity)
 	return NewDocumentRepository[E](db, collectionName, collectionOpts...)
 }
 
@@ -339,12 +339,19 @@ func (d *DocumentRepository[Entity]) GetCollection() *mongo.Collection {
 	return d.collection
 }
 
-func getCollectionName(emptyEntity any) string {
+// GetCollectionName returns the collection name for the given entity.
+// 判断 emptyEntity 是否实现了 mongoxentity.EntityDocument 接口，如果是，则调用其 CollectionName 方法获取集合名称。(同时支持，值和指针两种方式)
+// 如果不是，则使用反射获取结构体名称，并转换为 snake_case 格式。
+func GetCollectionName(emptyEntity any) string {
+	// 优先判断是否实现 mongoxentity.EntityDocument 接口（值类型和指针类型都支持）
 	if v, ok := emptyEntity.(mongoxentity.EntityDocument); ok {
 		return v.CollectionName()
 	}
 
 	entityType := reflect.TypeOf(emptyEntity)
+	if entityType.Kind() == reflect.Ptr {
+		entityType = entityType.Elem() // 获取指针指向的类型
+	}
 	structName := entityType.Name()
 	return toSnakeCase(structName)
 }
