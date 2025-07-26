@@ -67,7 +67,7 @@ func NewPage[T interface{}](content []*T, total int64, pageable *Pageable) *Page
 		Empty:            len(content) == 0,
 		First:            !hasPrevious,
 		Last:             !hasNext,
-		Number:           pageable.GetSize(),
+		Number:           pageable.GetPage(),
 		NumberOfElements: len(content),
 		Size:             pageable.GetSize(),
 		TotalElements:    total,
