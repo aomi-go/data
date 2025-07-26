@@ -7,15 +7,15 @@ import (
 
 func NewPageable(page int, size int) *Pageable {
 	return &Pageable{
-		Page: page,
-		Size: size,
+		Page: &page,
+		Size: &size,
 	}
 }
 
 func NewPageableWithSort(page int, size int, s sort.Sort) *Pageable {
 	return &Pageable{
-		Page: page,
-		Size: size,
+		Page: &page,
+		Size: &size,
 		Sort: s,
 	}
 }
@@ -27,12 +27,26 @@ func NewDefaultPageable() *Pageable {
 // Pageable 分页请求
 type Pageable struct {
 	sort.Sort
-	Page int `form:"page" json:"page" describe:"页码从0开始"`
-	Size int `form:"size" json:"size" describe:"每页的大小"`
+	Page *int `form:"page" json:"page" describe:"页码从0开始"`
+	Size *int `form:"size" json:"size" describe:"每页的大小"`
+}
+
+func (p *Pageable) GetPage() int {
+	if p.Page == nil {
+		return 0
+	}
+	return *p.Page
+}
+
+func (p *Pageable) GetSize() int {
+	if p.Size == nil {
+		return 20
+	}
+	return *p.Size
 }
 
 func (p *Pageable) GetOffset() int64 {
-	return int64(p.Page * p.Size)
+	return int64(p.GetPage() * p.GetSize())
 }
 
 func EmptyPage[T interface{}]() *Page[T] {
@@ -45,17 +59,17 @@ func NewPage[T interface{}](content []*T, total int64, pageable *Pageable) *Page
 		pageable = NewDefaultPageable()
 	}
 
-	totalPages := calculateTotalPages(total, pageable.Size)
-	hasPrevious := pageable.Page > 0
-	hasNext := pageable.Page+1 < totalPages
+	totalPages := calculateTotalPages(total, pageable.GetSize())
+	hasPrevious := pageable.GetPage() > 0
+	hasNext := pageable.GetPage()+1 < totalPages
 
 	return &Page[T]{
 		Empty:            len(content) == 0,
 		First:            !hasPrevious,
 		Last:             !hasNext,
-		Number:           pageable.Page,
+		Number:           pageable.GetSize(),
 		NumberOfElements: len(content),
-		Size:             pageable.Size,
+		Size:             pageable.GetSize(),
 		TotalElements:    total,
 		TotalPages:       totalPages,
 		Content:          content,
