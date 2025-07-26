@@ -15,7 +15,11 @@ func GetSortOpts(s sort2.Sort) *options.FindOptions {
 		if order.Direction == sort2.DESC {
 			value = -1
 		}
-		sort = append(sort, bson.E{Key: order.Property, Value: value})
+		p := order.Property
+		if p == "id" {
+			p = "_id" // MongoDB uses _id as the default identifier
+		}
+		sort = append(sort, bson.E{Key: p, Value: value})
 	}
 
 	return options.Find().SetSort(sort)
