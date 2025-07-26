@@ -224,7 +224,7 @@ func (d *DocumentRepository[Entity]) QueryWithPage(ctx context.Context, filter i
 		return page.NewPage[Entity](nil, 0, pageable), nil
 	}
 
-	pageOpts := options.Find().SetSkip(pageable.GetOffset()).SetLimit(int64(pageable.Size))
+	pageOpts := options.Find().SetSkip(pageable.GetOffset()).SetLimit(int64(pageable.GetSize()))
 	sortOpts := GetSortOpts(pageable.Sort)
 
 	entities, err := d.Find(ctx, filter, pageOpts, sortOpts)
