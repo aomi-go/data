@@ -221,7 +221,7 @@ func (d *DocumentRepository[Entity]) QueryWithPage(ctx context.Context, filter i
 	}
 
 	if total == 0 {
-		return page.NewPage[Entity](nil, 0, pageable), nil
+		return page.NewPage[Entity](make([]*Entity, 0), 0, pageable), nil
 	}
 
 	pageOpts := options.Find().SetSkip(pageable.GetOffset()).SetLimit(int64(pageable.GetSize()))
