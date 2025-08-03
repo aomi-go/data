@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var (
@@ -21,12 +22,12 @@ type Transaction struct {
 }
 
 // WithTransaction 执行一个事务
-func WithTransaction(ctx context.Context, fn func(ctx mongo.SessionContext) (interface{}, error)) (interface{}, error) {
+func WithTransaction(ctx context.Context, fn func(ctx mongo.SessionContext) (interface{}, error), opts ...*options.SessionOptions) (interface{}, error) {
 	if instance == nil {
 		return nil, ErrTransactionNotInitialized
 	}
 
-	session, err := instance.client.StartSession()
+	session, err := instance.client.StartSession(opts...)
 	if err != nil {
 		return nil, err
 	}
