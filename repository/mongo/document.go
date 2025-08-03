@@ -141,7 +141,7 @@ func (d *DocumentRepository[Entity]) SaveMany(ctx context.Context, entities []*E
 	}
 
 	// 执行批量写操作
-	opts := options.BulkWrite().SetOrdered(false)
+	opts := options.BulkWrite()
 	_, err := d.collection.BulkWrite(ctx, models, opts)
 	if err != nil {
 		return nil, err
