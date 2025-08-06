@@ -26,7 +26,7 @@ func (e *StrObjectIdEncoder) EncodeValue(context bsoncodec.EncodeContext, writer
 	dec := value.Interface().(mongoxentity.StrObjectId)
 	id := dec.ObjectId()
 	if id.IsZero() {
-		return writer.WriteUndefined()
+		return writer.WriteNull()
 	}
 	return writer.WriteObjectID(id)
 }
