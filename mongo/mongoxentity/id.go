@@ -45,6 +45,7 @@ func StrObjectIdFromObjectId(id primitive.ObjectID) StrObjectId {
 	return StrObjectId(id.Hex())
 }
 
+// StrObjectId 必须添加omitempty才能让MongoDB自动生成ID bson:"_id,omitempty"
 type StrObjectId string
 
 func (id StrObjectId) String() string {
