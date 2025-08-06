@@ -24,12 +24,7 @@ func (e *StrObjectIdEncoder) EncodeValue(context bsoncodec.EncodeContext, writer
 	}
 
 	dec := value.Interface().(mongoxentity.StrObjectId)
-	id, err := primitive.ObjectIDFromHex(dec.String())
-	if err != nil {
-		return err
-	}
-
-	return writer.WriteObjectID(id)
+	return writer.WriteObjectID(dec.ObjectId())
 }
 
 type StrObjectIdDecoder struct {
