@@ -2,6 +2,10 @@ package mongo
 
 import (
 	"context"
+	"reflect"
+	"regexp"
+	"strings"
+
 	"github.com/aomi-go/data/common/page"
 	"github.com/aomi-go/data/common/sort"
 	"github.com/aomi-go/data/mongo/mongoxentity"
@@ -9,9 +13,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"reflect"
-	"regexp"
-	"strings"
 )
 
 // NewDocumentRepositoryWithEntity creates a new DocumentRepository.
@@ -317,7 +318,8 @@ func (d *DocumentRepository[Entity]) ToObjectIdWithCheck(id interface{}) (primit
 			return oid, true
 		}
 	case BaseObjectId:
-		return v.ObjectId(), true
+		tmp := v.ObjectId()
+		return tmp, !tmp.IsZero()
 	default:
 		// 使用反射处理包装类型
 		val := reflect.ValueOf(id)
