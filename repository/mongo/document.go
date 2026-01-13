@@ -56,13 +56,10 @@ func (d *DocumentRepository[Entity]) Save(ctx context.Context, entity *Entity) (
 			return nil, err
 		}
 		return entity, nil
-	} else {
-		r, err := d.collection.InsertOne(ctx, entity)
-		if nil == err && idFieldOk {
-			d.setIdFieldValue(idFieldValue, r.InsertedID.(primitive.ObjectID))
-		}
-		return entity, err
 	}
+	d.setIdFieldValue(idFieldValue, primitive.NewObjectID())
+	_, err := d.collection.InsertOne(ctx, entity)
+	return entity, err
 }
 
 func (d *DocumentRepository[Entity]) FindAll(ctx context.Context) ([]*Entity, error) {
